@@ -3,10 +3,12 @@ package splicetraefikplugin
 import (
 	"bytes"
 	"context"
+	"crypto/sha1"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/pbkdf2"
 	"log"
 	"net/http"
 	"net/url"
@@ -251,12 +253,13 @@ func createEncryptor(keySecret string, secretSalt, signSalt []byte) *crypto.Mess
 	log.Printf("Secret salt: %s", string(secretSalt))
 	log.Printf("Sign salt: %s", string(signSalt))
 
-	kg := crypto.KeyGenerator{Secret: keySecret}
-	secret := kg.CacheGenerate(secretSalt, 32) // should be 32
-	log.Println(string(secret))
+	secret := pbkdf2.Key([]byte(keySecret), secretSalt, 1000, 32, sha1.New)
+	log.Printf("Secret: %s", string(secret))
+	signSecret := pbkdf2.Key([]byte(keySecret), signSalt, 1000, 64, sha1.New)
+	log.Printf("Sign secret: %s ", string(secret))
 	//signSecret := kg.CacheGenerate(signSalt, 64) // should be 64
-	//return &crypto.MessageEncryptor{Key: secret, SignKey: signSecret}
-	return nil
+	return &crypto.MessageEncryptor{Key: secret, SignKey: signSecret}
+	//return nil
 }
 
 type Session struct {
