@@ -131,9 +131,9 @@ func NewSessionManager(cookieName string, sessionSecret string) *SessionManager 
 	}
 
 	var sessionCrypt *crypto.MessageEncryptor
-	//if sessionSecret != "" {
-	//	sessionCrypt = createEncryptor(sessionSecret, []byte("encrypted cookie"), []byte("signed encrypted cookie"))
-	//}
+	if sessionSecret != "" {
+		sessionCrypt = createEncryptor(sessionSecret, []byte("encrypted cookie"), []byte("signed encrypted cookie"))
+	}
 
 	return &SessionManager{sessionCrypt: sessionCrypt, cookieName: cookieName, sessionSecret: sessionSecret}
 }
@@ -247,10 +247,10 @@ func (c *SessionManager) userFromCookie(_ context.Context, cookieValue string) (
 }
 
 func createEncryptor(keySecret string, secretSalt, signSalt []byte) *crypto.MessageEncryptor {
-	kg := crypto.KeyGenerator{Secret: keySecret}
-	secret := kg.CacheGenerate(secretSalt, 32)   // should be 32
-	signSecret := kg.CacheGenerate(signSalt, 64) // should be 64
-	return &crypto.MessageEncryptor{Key: secret, SignKey: signSecret}
+	_ = crypto.KeyGenerator{Secret: keySecret}
+	//secret := kg.CacheGenerate(secretSalt, 32)   // should be 32
+	//signSecret := kg.CacheGenerate(signSalt, 64) // should be 64
+	//return &crypto.MessageEncryptor{Key: secret, SignKey: signSecret}
 }
 
 type Session struct {
