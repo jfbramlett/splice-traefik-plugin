@@ -3,6 +3,8 @@ package splicetraefikplugin_test
 import (
 	"context"
 	"github.com/jfbramlett/splicetraefikplugin"
+	"github.com/traefik/yaegi/interp"
+	"github.com/traefik/yaegi/stdlib"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -45,4 +47,29 @@ func assertHeader(t *testing.T, req *http.Request, key, expected string) {
 	if req.Header.Get(key) != expected {
 		t.Errorf("invalid header value: %s", req.Header.Get(key))
 	}
+}
+
+func TestYaegi(t *testing.T) {
+	i := interp.New(interp.Options{GoPath: "/Users/johnbramlett/go/src/github.com/jfbramlett/splicetraefikplugin/vendor"})
+	i.Use(stdlib.Symbols)
+
+	_, err := i.Eval(`import "golang.org/x/crypto/pbkdf2"`)
+	if err != nil {
+		panic(err)
+	}
+	_, err = i.Eval(`import ""crypto/sha1""`)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = i.Eval(`secret := pbkdf2.Key([]byte("hello world"), []byte("my salt"), 1000, 32, sha1.New)`)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = i.Eval(`fmt.Println(secret)`)
+	if err != nil {
+		panic(err)
+	}
+
 }

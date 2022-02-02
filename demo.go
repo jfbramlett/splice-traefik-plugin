@@ -249,10 +249,6 @@ func (c *SessionManager) userFromCookie(_ context.Context, cookieValue string) (
 }
 
 func createEncryptor(keySecret string, secretSalt, signSalt []byte) *crypto.MessageEncryptor {
-	log.Printf("Key secret: %s", keySecret)
-	log.Printf("Secret salt: %s", string(secretSalt))
-	log.Printf("Sign salt: %s", string(signSalt))
-
 	secret := pbkdf2.Key([]byte(keySecret), secretSalt, 1000, 32, sha1.New)
 	log.Printf("Secret: %s", string(secret))
 	signSecret := pbkdf2.Key([]byte(keySecret), signSalt, 1000, 64, sha1.New)
