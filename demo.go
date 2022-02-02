@@ -90,9 +90,10 @@ func RequestIDMiddleware(h http.Handler) http.HandlerFunc {
 }
 
 func SessionMiddleware(h http.Handler) http.HandlerFunc {
-	sessionMgr := NewSessionManager("", "")
+	//sessionMgr := NewSessionManager("", "")
 	return func(w http.ResponseWriter, r *http.Request) {
-		user, _ := sessionMgr.UserFromRequest(r.Context(), r)
+		// user, _ := sessionMgr.UserFromRequest(r.Context(), r)
+		user := AnonymousUser
 		r.Header.Set("x-user-uuid", user.UUID)
 		r.Header.Set("x-user-id", fmt.Sprint(user.ID))
 		h.ServeHTTP(w, r)
