@@ -64,13 +64,11 @@ func (a *Demo) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		req.Header.Set(key, writer.String())
 	}
 
-	var reqUUID string
-
 	// Only generate a new request ID if it's not present in the Header
-	if reqUUID = req.Header.Get(HeaderKey); reqUUID == "" {
-		reqUUID = uuid.NewString()
-		req.Header.Set(HeaderKey, reqUUID)
-	}
+	//if reqUUID = req.Header.Get(HeaderKey); reqUUID == "" {
+	reqUUID := uuid.NewString()
+	req.Header.Set(HeaderKey, reqUUID)
+	//}
 
 	a.next.ServeHTTP(rw, req)
 }
