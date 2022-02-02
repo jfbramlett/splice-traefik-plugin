@@ -125,7 +125,10 @@ func NewSessionManager(cookieName string, sessionSecret string) *SessionManager 
 		sessionSecret = os.Getenv("RAILS_SECRET")
 	}
 
-	sessionCrypt := createEncryptor(sessionSecret, []byte("encrypted cookie"), []byte("signed encrypted cookie"))
+	var sessionCrypt *crypto.MessageEncryptor
+	if sessionSecret != "" {
+		sessionCrypt = createEncryptor(sessionSecret, []byte("encrypted cookie"), []byte("signed encrypted cookie"))
+	}
 
 	return &SessionManager{sessionCrypt: sessionCrypt, cookieName: cookieName, sessionSecret: sessionSecret}
 }
@@ -217,6 +220,9 @@ func (c *SessionManager) userFromJsonCookie(ctx context.Context, headerCookies s
 }
 
 func (c *SessionManager) userFromCookie(_ context.Context, cookieValue string) (User, error) {
+	if c.sessionCrypt == nil {
+		return AnonymousUser, nil
+	}
 	var err error
 	cookieValue, err = url.QueryUnescape(cookieValue)
 	if err != nil {
