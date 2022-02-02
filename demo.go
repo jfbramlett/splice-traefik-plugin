@@ -79,7 +79,7 @@ func RequestIDMiddleware(h http.Handler) http.HandlerFunc {
 			reqUUID = uuid.NewString()
 		}
 
-		w.Header().Set(HeaderKey, reqUUID)
+		r.Header.Set(HeaderKey, reqUUID)
 		h.ServeHTTP(w, r)
 	}
 }
