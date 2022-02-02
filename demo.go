@@ -46,6 +46,7 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 }
 
 func (a *Demo) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	next := a.next
 	for key, value := range a.headers {
 		tmpl, err := a.template.Parse(value)
 		if err != nil {
@@ -64,11 +65,19 @@ func (a *Demo) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		req.Header.Set(key, writer.String())
 	}
 
-	// Only generate a new request ID if it's not present in the Header
-	//if reqUUID = req.Header.Get(HeaderKey); reqUUID == "" {
-	reqUUID := uuid.NewString()
-	req.Header.Set(HeaderKey, reqUUID)
-	//}
+	next = RequestIDMiddleware(next)
 
-	a.next.ServeHTTP(rw, req)
+	next.ServeHTTP(rw, req)
+}
+
+func RequestIDMiddleware(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Only generate a new request ID if it's not present in the Header
+		if reqUUID := r.Header.Get(HeaderKey); reqUUID == "" {
+			reqUUID = uuid.NewString()
+			r.Header.Set(HeaderKey, reqUUID)
+		}
+
+		h.ServeHTTP(w, r)
+	}
 }
