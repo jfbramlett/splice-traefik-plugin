@@ -1,16 +1,15 @@
-package plugindemo_test
+package splicetraefikplugin_test
 
 import (
 	"context"
+	"github.com/jfbramlett/splicetraefikplugin"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/jfbramlett/splice-traefik-plugin"
 )
 
 func TestDemo(t *testing.T) {
-	cfg := plugindemo.CreateConfig()
+	cfg := splicetraefikplugin.CreateConfig()
 	cfg.Headers["X-Host"] = "[[.Host]]"
 	cfg.Headers["X-Method"] = "[[.Method]]"
 	cfg.Headers["X-URL"] = "[[.URL]]"
@@ -20,7 +19,7 @@ func TestDemo(t *testing.T) {
 	ctx := context.Background()
 	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {})
 
-	handler, err := plugindemo.New(ctx, next, cfg, "demo-plugin")
+	handler, err := splicetraefikplugin.New(ctx, next, cfg, "demo-plugin")
 	if err != nil {
 		t.Fatal(err)
 	}

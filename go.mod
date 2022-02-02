@@ -1,3 +1,3 @@
-module github.com/jfbramlett/splice-traefik-plugin
+module github.com/jfbramlett/splicetraefikplugin
 
 go 1.16

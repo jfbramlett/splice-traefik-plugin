@@ -1,7 +1,7 @@
 displayName: Demo Plugin
 type: middleware
 
-import: github.com/jfbramlett/splice-traefik-plugin
+import: github.com/jfbramlett/splicetraefikplugin
 
 summary: '[Demo] Add Request Header'
 
