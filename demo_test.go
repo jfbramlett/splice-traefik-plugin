@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/traefik/plugindemo"
+	"github.com/jfbramlett/splice-traefik-plugin"
 )
 
 func TestDemo(t *testing.T) {
