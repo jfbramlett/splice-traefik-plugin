@@ -1,3 +1,8 @@
 # github.com/google/uuid v1.3.0
 ## explicit
 github.com/google/uuid
+# github.com/mattetti/goRailsYourself v1.0.0
+## explicit
+github.com/mattetti/goRailsYourself/crypto
+# golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
+golang.org/x/crypto/pbkdf2
