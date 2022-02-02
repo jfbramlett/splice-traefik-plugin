@@ -53,21 +53,51 @@ func TestYaegi(t *testing.T) {
 	i := interp.New(interp.Options{GoPath: "/Users/johnbramlett/go/src/github.com/jfbramlett/splicetraefikplugin/vendor"})
 	i.Use(stdlib.Symbols)
 
-	_, err := i.Eval(`import "golang.org/x/crypto/pbkdf2"`)
+	_, err := i.Eval(`import "crypto/hmac"`)
 	if err != nil {
 		panic(err)
 	}
-	_, err = i.Eval(`import ""crypto/sha1""`)
+	_, err = i.Eval(`import "crypto/sha1"`)
 	if err != nil {
 		panic(err)
+	}
+	_, err = i.Eval(`import "fmt"`)
+	if err != nil {
+		panic(err)
+	}
+	_, err = i.Eval(`prf := hmac.New(sha1.New, []byte("this is a test"))
+	hashLen := prf.Size()
+	numBlocks := (32 + hashLen - 1) / hashLen
+
+	var buf [4]byte
+	dk := make([]byte, 0, numBlocks*hashLen)
+	U := make([]byte, hashLen)
+	for block := 1; block <= numBlocks; block++ {
+		prf.Reset()
+		prf.Write([]byte("salt"))
+		buf[0] = byte(block >> 24)
+		buf[1] = byte(block >> 16)
+		buf[2] = byte(block >> 8)
+		buf[3] = byte(block)
+		prf.Write(buf[:4])
+		dk = prf.Sum(dk)
+		T := dk[len(dk)-hashLen:]
+		copy(U, T)
+
+		// U_n = PRF([]byte("this is a test"), U_(n-1))
+		for n := 2; n <= 1000; n++ {
+			prf.Reset()
+			prf.Write(U)
+			U = U[:0]
+			U = prf.Sum(U)
+			for x := range U {
+				T[x] ^= U[x]
+			}
+		}
 	}
 
-	_, err = i.Eval(`secret := pbkdf2.Key([]byte("hello world"), []byte("my salt"), 1000, 32, sha1.New)`)
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = i.Eval(`fmt.Println(secret)`)
+	fmt.Println(dk[:32])
+`)
 	if err != nil {
 		panic(err)
 	}
