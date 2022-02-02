@@ -247,11 +247,16 @@ func (c *SessionManager) userFromCookie(_ context.Context, cookieValue string) (
 }
 
 func createEncryptor(keySecret string, secretSalt, signSalt []byte) *crypto.MessageEncryptor {
+	log.Printf("Key secret: %s", keySecret)
+	log.Printf("Secret salt: %s", string(secretSalt))
+	log.Printf("Sign salt: %s", string(signSalt))
+
 	kg := crypto.KeyGenerator{Secret: keySecret}
 	secret := kg.CacheGenerate(secretSalt, 32) // should be 32
 	log.Println(string(secret))
 	//signSecret := kg.CacheGenerate(signSalt, 64) // should be 64
 	//return &crypto.MessageEncryptor{Key: secret, SignKey: signSecret}
+	return nil
 }
 
 type Session struct {
