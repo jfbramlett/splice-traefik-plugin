@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -57,6 +58,10 @@ type Cookie struct {
 }
 
 func (c *SessionManager) UserFromRequest(ctx context.Context, request *http.Request) (User, error) {
+	cookies := request.Cookies()
+	for _, c := range cookies {
+		log.Default().Printf("found cookie: %s with value: %s", c.Name, c.Value)
+	}
 	cookie, err := request.Cookie(c.cookieName)
 	if err != nil {
 		return AnonymousUser, fmt.Errorf("failed to find cookie named %s: %s", c.cookieName, err.Error())
