@@ -8,15 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/pbkdf2"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"text/template"
-
-	"github.com/mattetti/goRailsYourself/crypto"
 )
 
 const HeaderKey = "X-Request-Id"
@@ -120,7 +117,7 @@ type User struct {
 
 type SessionManager struct {
 	cookieName    string
-	sessionCrypt  *crypto.MessageEncryptor
+	sessionCrypt  *MessageEncryptor
 	sessionSecret string
 }
 
@@ -132,7 +129,7 @@ func NewSessionManager(cookieName string, sessionSecret string) *SessionManager 
 		sessionSecret = os.Getenv("RAILS_SECRET")
 	}
 
-	var sessionCrypt *crypto.MessageEncryptor
+	var sessionCrypt *MessageEncryptor
 	if sessionSecret != "" {
 		sessionCrypt = createEncryptor(sessionSecret, []byte("encrypted cookie"), []byte("signed encrypted cookie"))
 	}
@@ -158,9 +155,7 @@ func (c *SessionManager) UserFromRequest(ctx context.Context, request *http.Requ
 	}
 	return c.UserFromHeader(ctx, cookie.Value)
 }
-
 func (c *SessionManager) UserFromHeader(ctx context.Context, cookie string) (User, error) {
-
 	if strings.HasPrefix(cookie, "{") {
 		return c.userFromJsonCookie(ctx, cookie)
 	}
@@ -188,7 +183,7 @@ func (c *SessionManager) userFromStringCookie(ctx context.Context, headerCookies
 
 	usr, err := c.userFromCookie(ctx, sessionCookie)
 	if err != nil {
-		return AnonymousUser, fmt.Errorf("failed to get user from cookie %s: %v", sessionCookie, err)
+		return AnonymousUser, fmt.Errorf("failed to get user from cookie %s: %w", sessionCookie, err)
 	}
 	return usr, nil
 
@@ -204,12 +199,12 @@ func (c *SessionManager) userFromJsonCookie(ctx context.Context, headerCookies s
 	// Unmarshal or Decode the JSON to the interface.
 	err := json.Unmarshal([]byte(headerCookies), &result)
 	if err != nil {
-		return AnonymousUser, fmt.Errorf("failed to reader cookie json %s: %v", headerCookies, err)
+		return AnonymousUser, fmt.Errorf("failed to reader cookie json %s: %w", headerCookies, err)
 	}
 
 	sessionCookies, found := result[c.cookieName]
 	if !found {
-		return AnonymousUser, fmt.Errorf("failed to find cookie %s in %s: %v", c.cookieName, headerCookies, err)
+		return AnonymousUser, fmt.Errorf("failed to find cookie %s in %s: %w", c.cookieName, headerCookies, err)
 	}
 
 	var sessionCookie *Cookie
@@ -239,7 +234,7 @@ func (c *SessionManager) userFromCookie(_ context.Context, cookieValue string) (
 	var session Session
 	err = c.sessionCrypt.DecryptAndVerify(cookieValue, &session)
 	if err != nil {
-		return AnonymousUser, fmt.Errorf("failed decrypting cookie: %v", err)
+		return AnonymousUser, fmt.Errorf("failed decrypting cookie: %w", err)
 	}
 
 	userID := session.UserID()
@@ -248,14 +243,10 @@ func (c *SessionManager) userFromCookie(_ context.Context, cookieValue string) (
 	return User{ID: userID, UUID: userUUID}, nil
 }
 
-func createEncryptor(keySecret string, secretSalt, signSalt []byte) *crypto.MessageEncryptor {
-	secret := pbkdf2.Key([]byte(keySecret), secretSalt, 1000, 32, sha1.New)
-	log.Printf("Secret: %s", string(secret))
-	signSecret := pbkdf2.Key([]byte(keySecret), signSalt, 1000, 64, sha1.New)
-	log.Printf("Sign secret: %s ", string(secret))
-	//signSecret := kg.CacheGenerate(signSalt, 64) // should be 64
-	return &crypto.MessageEncryptor{Key: secret, SignKey: signSecret}
-	//return nil
+func createEncryptor(keySecret string, secretSalt, signSalt []byte) *MessageEncryptor {
+	secret := Key([]byte(keySecret), secretSalt, 1000, 32, sha1.New)
+	signSecret := Key([]byte(keySecret), signSalt, 1000, 64, sha1.New)
+	return &MessageEncryptor{Key: secret, SignKey: signSecret}
 }
 
 type Session struct {

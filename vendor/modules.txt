@@ -1,14 +1,3 @@
 # github.com/google/uuid v1.3.0
 ## explicit
 github.com/google/uuid
-# github.com/mattetti/goRailsYourself v1.0.0
-## explicit
-github.com/mattetti/goRailsYourself/crypto
-# github.com/traefik/yaegi v0.11.2
-## explicit
-github.com/traefik/yaegi/internal/unsafe2
-github.com/traefik/yaegi/interp
-github.com/traefik/yaegi/stdlib
-# golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
-## explicit
-golang.org/x/crypto/pbkdf2
