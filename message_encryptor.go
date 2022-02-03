@@ -119,8 +119,8 @@ func PKCS7Unpad(data []byte) []byte {
 	return data
 }
 
-func Key(password, salt []byte, iter, keyLen int, h func() hash.Hash) []byte {
-	prf := hmac.New(h, password)
+func Key(password, salt []byte, iter, keyLen int) []byte {
+	prf := hmac.New(sha1.New, password)
 	hashLen := prf.Size()
 	numBlocks := (keyLen + hashLen - 1) / hashLen
 

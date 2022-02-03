@@ -3,7 +3,6 @@ package splicetraefikplugin
 import (
 	"bytes"
 	"context"
-	"crypto/sha1"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -244,8 +243,8 @@ func (c *SessionManager) userFromCookie(_ context.Context, cookieValue string) (
 }
 
 func createEncryptor(keySecret string, secretSalt, signSalt []byte) *MessageEncryptor {
-	secret := Key([]byte(keySecret), secretSalt, 1000, 32, sha1.New)
-	signSecret := Key([]byte(keySecret), signSalt, 1000, 64, sha1.New)
+	secret := Key([]byte(keySecret), secretSalt, 1000, 32)
+	signSecret := Key([]byte(keySecret), signSalt, 1000, 64)
 	return &MessageEncryptor{Key: secret, SignKey: signSecret}
 }
 
