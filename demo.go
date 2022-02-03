@@ -84,6 +84,7 @@ func RequestIDMiddleware(h http.Handler) http.HandlerFunc {
 		// Only generate a new request ID if it's not present in the Header
 		if reqUUID := r.Header.Get(HeaderKey); reqUUID == "" {
 			reqUUID = uuid.NewString()
+			log.Default().Printf("assigning generated uuid to request: %s", reqUUID)
 			r.Header.Set(HeaderKey, reqUUID)
 		}
 
@@ -95,6 +96,7 @@ func SessionMiddleware(h http.Handler) http.HandlerFunc {
 	sessionMgr := NewSessionManager("", "")
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, _ := sessionMgr.UserFromRequest(r.Context(), r)
+		log.Default().Printf("assigning user uuid and id: %s %d", user.UUID, user.ID)
 		r.Header.Set("x-user-uuid", user.UUID)
 		r.Header.Set("x-user-id", fmt.Sprint(user.ID))
 		h.ServeHTTP(w, r)
