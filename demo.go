@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -91,11 +90,7 @@ func RequestIDMiddleware(h http.Handler) http.HandlerFunc {
 func SessionMiddleware(h http.Handler) http.HandlerFunc {
 	sessionMgr := NewSessionManager("", "")
 	return func(w http.ResponseWriter, r *http.Request) {
-		if sessionMgr != nil {
-			log.Println("successfully created session mgr")
-		}
-		// user, _ := sessionMgr.UserFromRequest(r.Context(), r)
-		user := AnonymousUser
+		user, _ := sessionMgr.UserFromRequest(r.Context(), r)
 		r.Header.Set("x-user-uuid", user.UUID)
 		r.Header.Set("x-user-id", fmt.Sprint(user.ID))
 		h.ServeHTTP(w, r)
