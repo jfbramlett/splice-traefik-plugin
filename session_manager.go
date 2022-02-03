@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -59,6 +60,7 @@ type Cookie struct {
 func (c *SessionManager) UserFromRequest(ctx context.Context, request *http.Request) (User, error) {
 	cookie, err := request.Cookie(c.cookieName)
 	if err != nil {
+		log.Default().Println("failed trying to get user from cookie: %w", err)
 		return AnonymousUser, err
 	}
 	return c.UserFromHeader(ctx, cookie.Value)

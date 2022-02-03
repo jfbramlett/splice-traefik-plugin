@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
+	datadog "gopkg.in/DataDog/dd-trace-go.v1/contrib/net/http"
 	"log"
 	"net/http"
 	"text/template"
@@ -68,7 +69,7 @@ func (a *Demo) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	next = LoggingMiddleware(RequestIDMiddleware(SessionMiddleware(next)))
 
-	next.ServeHTTP(rw, req)
+	datadog.WrapHandler(next, "api-gateway-traefik", req.URL.Path).ServeHTTP(rw, req)
 }
 
 func LoggingMiddleware(h http.Handler) http.HandlerFunc {
