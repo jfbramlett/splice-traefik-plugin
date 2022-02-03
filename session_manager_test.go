@@ -2,9 +2,10 @@ package splicetraefikplugin_test
 
 import (
 	"context"
-	"github.com/jfbramlett/splicetraefikplugin"
 	"os"
 	"testing"
+
+	"github.com/jfbramlett/splicetraefikplugin"
 )
 
 func TestUserFromCookie(t *testing.T) {
@@ -118,4 +119,27 @@ func TestUserFromCookie(t *testing.T) {
 		}
 	})
 
+	t.Run("k6 example", func(t *testing.T) {
+		t.Skip("bad RAILS_SECRET")
+		userUUID := "f2639c13-0427-9680-4a0b-0041b25b05cdfe9b556"
+		userID := 2
+
+		_ = os.Setenv("RAILS_COOKIE_NAME", "_splice_staging_session")
+		_ = os.Setenv("RAILS_SECRET", "f7b5763636f4c1f3ff4bd444eacccca295d87b990cc104124017ad70550edcfd22b8e89465338254e0b608592a9aac29025440bfd9ce53579835ba06a86f85f9")
+
+		cm := splicetraefikplugin.NewSessionManager("", "")
+
+		usr, err := cm.UserFromHeader(context.Background(),
+			`{"_splice_staging_session":[{"name":"_splice_staging_session","value":"ZjZIVjlGMWl5MmlaV0dVTmhiVGZqMHI5L3VDZXpBRDZ0ZmxiekcvdldISzN6SUdud0hreTVYcDZFMkd3VXZRMmRpWWlnSE1nTnFPK1hkVTd4SzhCajQ2c2V0cHo4Z0EwTkZXZEtpRm1RL1lNWEVqL1MwSjh5MTh3WHkzT2RqMlFFNGIya3FuREZ6ZmIzQ044TGQvSUVXeW00M3JhMFhGcGo0dXd3Tm9qUGFVcm1uQ0ZkM2NXM0ovTmt2S0hiSm5Yc2oyOCtwWUZjOW9DVEczd3VCbHM5bjdWZUIrRTZFWjNkMTVWTURaU29IND0tLWsyWGFLZEVQdkNNM09tRFN3U1dSbXc9PQ%3D%3D--3ca983960403001056b6164c4e2cf6d538cc2f6a","domain":"splice.com","path":"/","http_only":true,"secure":true,"max_age":0,"expires":1651613232000}],"XSRF-TOKEN":[{"name":"XSRF-TOKEN","value":"7hTdNXC64wlrlrniKaReeeuPHog:1643923632823","domain":"splice.com","path":"/","http_only":false,"secure":true,"max_age":0,"expires":1644010032000}]}; __cf_bm=IMJaY1ODLTQiCiho5MLd0yAsggfy4ZrrWu7imlKIxws-1643923735-0-AVkHKsq42HzKs1q5IsPn9legL0ib5+6uuMCT11zBbf5DI0+RWa37/dDFbb7tSitG71buu3bjZS69KjgHgkNmS+kB2ymZL/JoaYPkUR/HW4Kz`)
+		if err != nil {
+			t.Fail()
+		}
+
+		if userUUID != usr.UUID {
+			t.Error("user uuid's don't match")
+		}
+		if userID != usr.ID {
+			t.Error("user id's don't match")
+		}
+	})
 }

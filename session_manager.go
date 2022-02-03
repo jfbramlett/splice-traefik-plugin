@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -58,36 +57,40 @@ type Cookie struct {
 }
 
 func (c *SessionManager) UserFromRequest(ctx context.Context, request *http.Request) (User, error) {
-	cookies := request.Cookies()
-	for _, c := range cookies {
-		log.Default().Printf("found cookie: %s with value: %s", c.Name, c.Value)
-	}
-	cookie, err := request.Cookie(c.cookieName)
-	if err != nil {
-		return AnonymousUser, fmt.Errorf("failed to find cookie named %s: %s", c.cookieName, err.Error())
-	}
-	return c.UserFromHeader(ctx, cookie.Value)
+	cookieHeader := request.Header.Get("cookie")
+
+	return c.UserFromHeader(ctx, cookieHeader)
 }
-func (c *SessionManager) UserFromHeader(ctx context.Context, cookie string) (User, error) {
-	if strings.HasPrefix(cookie, "{") {
-		return c.userFromJsonCookie(ctx, cookie)
+func (c *SessionManager) UserFromHeader(ctx context.Context, headerCookie string) (User, error) {
+	cookiesList := strings.Split(headerCookie, "; ")
+	for _, cookie := range cookiesList {
+		if strings.HasPrefix(cookie, "{") {
+			usr, err := c.userFromJsonCookie(ctx, cookie)
+			if err != nil {
+				continue
+			}
+			return usr, nil
+		} else {
+			usr, err := c.userFromStringCookie(ctx, cookie)
+			if err != nil {
+				continue
+			}
+			return usr, nil
+		}
 	}
-	return c.userFromStringCookie(ctx, cookie)
+
+	return AnonymousUser, errors.New("failed to find a valid cookie")
 }
 
-func (c *SessionManager) userFromStringCookie(ctx context.Context, headerCookies string) (User, error) {
-	cookiesList := strings.Split(headerCookies, "; ")
+func (c *SessionManager) userFromStringCookie(ctx context.Context, cookie string) (User, error) {
 
 	var sessionCookie string
 	cookieMatch := strings.ToLower(fmt.Sprintf("%s=", c.cookieName))
-	for _, cookie := range cookiesList {
-		if strings.HasPrefix(strings.ToLower(cookie), cookieMatch) {
-			sessionCookie = strings.ReplaceAll(cookie, cookieMatch, "")
-			sessionCookieParts := strings.Split(sessionCookie, ",")
-			if len(sessionCookieParts) > 0 {
-				sessionCookie = sessionCookieParts[0]
-			}
-			break
+	if strings.HasPrefix(strings.ToLower(cookie), cookieMatch) {
+		sessionCookie = strings.ReplaceAll(cookie, cookieMatch, "")
+		sessionCookieParts := strings.Split(sessionCookie, ",")
+		if len(sessionCookieParts) > 0 {
+			sessionCookie = sessionCookieParts[0]
 		}
 	}
 	if sessionCookie == "" {
@@ -99,7 +102,6 @@ func (c *SessionManager) userFromStringCookie(ctx context.Context, headerCookies
 		return AnonymousUser, fmt.Errorf("failed to get user from cookie %s: %s", sessionCookie, err.Error())
 	}
 	return usr, nil
-
 }
 
 func (c *SessionManager) userFromJsonCookie(ctx context.Context, headerCookies string) (User, error) {
@@ -117,7 +119,7 @@ func (c *SessionManager) userFromJsonCookie(ctx context.Context, headerCookies s
 
 	sessionCookies, found := result[c.cookieName]
 	if !found {
-		return AnonymousUser, fmt.Errorf("failed to find cookie %s in %s: %s", c.cookieName, headerCookies, err.Error())
+		return AnonymousUser, fmt.Errorf("failed to find cookie %s in %s", c.cookieName, headerCookies)
 	}
 
 	var sessionCookie *Cookie
