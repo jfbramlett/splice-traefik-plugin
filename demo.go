@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	datadog "gopkg.in/DataDog/dd-trace-go.v1/contrib/net/http"
 	"log"
 	"net/http"
 	"text/template"
+
+	"github.com/google/uuid"
 )
 
 const HeaderKey = "X-Request-Id"
@@ -69,7 +69,7 @@ func (a *Demo) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	next = LoggingMiddleware(RequestIDMiddleware(SessionMiddleware(next)))
 
-	datadog.WrapHandler(next, "api-gateway-traefik", req.URL.Path).ServeHTTP(rw, req)
+	next.ServeHTTP(rw, req)
 }
 
 func LoggingMiddleware(h http.Handler) http.HandlerFunc {
@@ -96,7 +96,10 @@ func RequestIDMiddleware(h http.Handler) http.HandlerFunc {
 func SessionMiddleware(h http.Handler) http.HandlerFunc {
 	sessionMgr := NewSessionManager("", "")
 	return func(w http.ResponseWriter, r *http.Request) {
-		user, _ := sessionMgr.UserFromRequest(r.Context(), r)
+		user, err := sessionMgr.UserFromRequest(r.Context(), r)
+		if err != nil {
+			log.Default().Println("failed trying to get user from cookie: %w", err)
+		}
 		log.Default().Printf("assigning user uuid and id: %s %d", user.UUID, user.ID)
 		r.Header.Set("x-user-uuid", user.UUID)
 		r.Header.Set("x-user-id", fmt.Sprint(user.ID))
