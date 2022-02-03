@@ -98,7 +98,7 @@ func SessionMiddleware(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, err := sessionMgr.UserFromRequest(r.Context(), r)
 		if err != nil {
-			log.Default().Println("failed trying to get user from cookie: %w", err)
+			log.Default().Printf("failed trying to get user from cookie: %s", err.Error())
 		}
 		log.Default().Printf("assigning user uuid and id: %s %d", user.UUID, user.ID)
 		r.Header.Set("x-user-uuid", user.UUID)

@@ -59,7 +59,7 @@ type Cookie struct {
 func (c *SessionManager) UserFromRequest(ctx context.Context, request *http.Request) (User, error) {
 	cookie, err := request.Cookie(c.cookieName)
 	if err != nil {
-		return AnonymousUser, err
+		return AnonymousUser, fmt.Errorf("failed to find cookie named %s: %s", c.cookieName, err.Error())
 	}
 	return c.UserFromHeader(ctx, cookie.Value)
 }
@@ -91,7 +91,7 @@ func (c *SessionManager) userFromStringCookie(ctx context.Context, headerCookies
 
 	usr, err := c.userFromCookie(ctx, sessionCookie)
 	if err != nil {
-		return AnonymousUser, fmt.Errorf("failed to get user from cookie %s: %w", sessionCookie, err)
+		return AnonymousUser, fmt.Errorf("failed to get user from cookie %s: %s", sessionCookie, err.Error())
 	}
 	return usr, nil
 
@@ -107,12 +107,12 @@ func (c *SessionManager) userFromJsonCookie(ctx context.Context, headerCookies s
 	// Unmarshal or Decode the JSON to the interface.
 	err := json.Unmarshal([]byte(headerCookies), &result)
 	if err != nil {
-		return AnonymousUser, fmt.Errorf("failed to reader cookie json %s: %w", headerCookies, err)
+		return AnonymousUser, fmt.Errorf("failed to reader cookie json %s: %s", headerCookies, err.Error())
 	}
 
 	sessionCookies, found := result[c.cookieName]
 	if !found {
-		return AnonymousUser, fmt.Errorf("failed to find cookie %s in %s: %w", c.cookieName, headerCookies, err)
+		return AnonymousUser, fmt.Errorf("failed to find cookie %s in %s: %s", c.cookieName, headerCookies, err.Error())
 	}
 
 	var sessionCookie *Cookie
@@ -142,7 +142,7 @@ func (c *SessionManager) userFromCookie(_ context.Context, cookieValue string) (
 	var session Session
 	err = c.sessionCrypt.DecryptAndVerify(cookieValue, &session)
 	if err != nil {
-		return AnonymousUser, fmt.Errorf("failed decrypting cookie: %w", err)
+		return AnonymousUser, fmt.Errorf("failed decrypting cookie: %s", err.Error())
 	}
 
 	userID := session.UserID()
