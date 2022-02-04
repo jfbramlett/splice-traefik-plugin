@@ -25,8 +25,8 @@ func CreateConfig() *Config {
 	}
 }
 
-// Demo a Demo plugin.
-type Demo struct {
+// Splice the custom splice plugin
+type Splice struct {
 	next     http.Handler
 	headers  map[string]string
 	name     string
@@ -35,11 +35,7 @@ type Demo struct {
 
 // New created a new Demo plugin.
 func New(_ context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
-	if len(config.Headers) == 0 {
-		return nil, fmt.Errorf("headers cannot be empty")
-	}
-
-	return &Demo{
+	return &Splice{
 		headers:  config.Headers,
 		next:     next,
 		name:     name,
@@ -47,7 +43,7 @@ func New(_ context.Context, next http.Handler, config *Config, name string) (htt
 	}, nil
 }
 
-func (a *Demo) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+func (a *Splice) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	next := a.next
 	for key, value := range a.headers {
 		tmpl, err := a.template.Parse(value)
@@ -94,10 +90,8 @@ func RequestIDMiddleware(h http.Handler) http.HandlerFunc {
 }
 
 func SessionMiddleware(h http.Handler) http.HandlerFunc {
-	sessionMgr := NewSessionManager("", "")
+	sessionMgr := NewSessionManager()
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Default().Println("starting session processing")
-
 		user, err := sessionMgr.UserFromRequest(r.Context(), r)
 		if err != nil {
 			log.Default().Printf("failed trying to get user from cookie: %s", err.Error())

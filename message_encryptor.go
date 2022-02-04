@@ -11,14 +11,11 @@ import (
 	"encoding/json"
 	"errors"
 	"hash"
-	"log"
 	"strings"
 )
 
 type MessageEncryptor struct {
-	Key []byte
-	// optional property used to automatically set the
-	// verifier if not already set.
+	Key      []byte
 	SignKey  []byte
 	Cipher   string
 	Verifier *MessageVerifier
@@ -30,8 +27,6 @@ func (crypt *MessageEncryptor) DecryptAndVerify(msg string, target *Session) err
 		Secret: crypt.SignKey,
 		Hasher: sha1.New,
 	}
-
-	log.Default().Printf("verifying cookie value %s", msg)
 
 	base64Msg, err := crypt.Verifier.Verify(msg)
 	if err != nil {
@@ -47,8 +42,6 @@ func (crypt *MessageEncryptor) Decrypt(value string, target *Session) error {
 }
 
 func (crypt *MessageEncryptor) aesCbcDecrypt(encryptedMsg string, target *Session) error {
-	log.Default().Printf("descrypting cookie value %s", encryptedMsg)
-
 	k := crypt.Key
 	// The longest accepted key is 32 byte long,
 	// instead of rejecting a long key, we truncate it.
@@ -217,7 +210,7 @@ func (crypt *MessageVerifier) secureCompare(strA, strB string) bool {
 
 func (crypt *MessageVerifier) checkInit() error {
 	if crypt == nil {
-		return errors.New("MessageVerifier not set")
+		return errors.New("messageVerifier not set")
 	}
 
 	if crypt.Hasher == nil {
@@ -226,14 +219,12 @@ func (crypt *MessageVerifier) checkInit() error {
 	}
 
 	if crypt.Secret == nil {
-		return errors.New("Secret not set")
+		return errors.New("secret not set")
 	}
 
 	return nil
 }
 
 func Unserialize(data []byte, session *Session) error {
-	log.Default().Printf("unserializing cookie value %s", string(data))
-
 	return json.Unmarshal(data, session)
 }

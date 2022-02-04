@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -30,13 +29,9 @@ type SessionManager struct {
 	sessionSecret string
 }
 
-func NewSessionManager(cookieName string, sessionSecret string) *SessionManager {
-	if cookieName == "" {
-		cookieName = os.Getenv("RAILS_COOKIE_NAME")
-	}
-	if sessionSecret == "" {
-		sessionSecret = os.Getenv("RAILS_SECRET")
-	}
+func NewSessionManager() *SessionManager {
+	cookieName := os.Getenv("RAILS_COOKIE_NAME")
+	sessionSecret := os.Getenv("RAILS_SECRET")
 
 	var sessionCrypt *MessageEncryptor
 	if sessionSecret != "" {
@@ -59,13 +54,11 @@ type Cookie struct {
 
 func (c *SessionManager) UserFromRequest(ctx context.Context, request *http.Request) (User, error) {
 	cookieHeader := request.Header.Get("cookie")
-	log.Default().Printf("read cookies: %s", cookieHeader)
 	return c.UserFromHeader(ctx, cookieHeader)
 }
 func (c *SessionManager) UserFromHeader(ctx context.Context, headerCookie string) (User, error) {
 	cookiesList := strings.Split(headerCookie, "; ")
 	for _, cookie := range cookiesList {
-		log.Default().Printf("cookie value: %s", cookie)
 		if strings.HasPrefix(cookie, "{") {
 			usr, err := c.userFromJsonCookie(ctx, cookie)
 			if err != nil {
@@ -123,7 +116,6 @@ func (c *SessionManager) userFromJsonCookie(ctx context.Context, headerCookies s
 	if !found {
 		return AnonymousUser, fmt.Errorf("failed to find cookie %s in %s", c.cookieName, headerCookies)
 	}
-	log.Default().Printf("found session cookie %s", c.cookieName)
 
 	var sessionCookie *Cookie
 	for _, sc := range sessionCookies {
@@ -143,15 +135,12 @@ func (c *SessionManager) userFromCookie(_ context.Context, cookieValue string) (
 	if c.sessionCrypt == nil {
 		return AnonymousUser, nil
 	}
-	log.Default().Printf("processing cookie value %s", cookieValue)
 
 	var err error
 	cookieValue, err = url.QueryUnescape(cookieValue)
 	if err != nil {
 		return AnonymousUser, err
 	}
-
-	log.Default().Printf("decrypting and verifying cookie value %s", cookieValue)
 
 	var session Session
 	err = c.sessionCrypt.DecryptAndVerify(cookieValue, &session)

@@ -1,9 +1,9 @@
-displayName: Demo Plugin
+displayName: Splice Plugin
 type: middleware
 
 import: github.com/jfbramlett/splicetraefikplugin
 
-summary: '[Demo] Add Request Header'
+summary: '[Splice] The all-containing splice plugin that handles logging, request id, and user from session'
 
 testData:
   Headers:
