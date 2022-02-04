@@ -11,22 +11,17 @@ import (
 	"encoding/json"
 	"errors"
 	"hash"
+	"log"
 	"strings"
 )
-
-type MsgSerializer interface {
-	Serialize(v interface{}) (string, error)
-	Unserialize(data string, v interface{}) error
-}
 
 type MessageEncryptor struct {
 	Key []byte
 	// optional property used to automatically set the
 	// verifier if not already set.
-	SignKey    []byte
-	Cipher     string
-	Verifier   *MessageVerifier
-	Serializer MsgSerializer
+	SignKey  []byte
+	Cipher   string
+	Verifier *MessageVerifier
 }
 
 func (crypt *MessageEncryptor) DecryptAndVerify(msg string, target *Session) error {
@@ -35,6 +30,8 @@ func (crypt *MessageEncryptor) DecryptAndVerify(msg string, target *Session) err
 		Secret: crypt.SignKey,
 		Hasher: sha1.New,
 	}
+
+	log.Default().Printf("verifying cookie value %s", msg)
 
 	base64Msg, err := crypt.Verifier.Verify(msg)
 	if err != nil {
@@ -46,13 +43,12 @@ func (crypt *MessageEncryptor) DecryptAndVerify(msg string, target *Session) err
 // Decrypt decrypts a message using the set cipher and the secret.
 // The passed value is expected to be a base 64 encoded string of the encrypted data + IV joined by "--"
 func (crypt *MessageEncryptor) Decrypt(value string, target *Session) error {
-	if crypt.Serializer == nil {
-		crypt.Serializer = JsonMsgSerializer{}
-	}
 	return crypt.aesCbcDecrypt(value, target)
 }
 
-func (crypt *MessageEncryptor) aesCbcDecrypt(encryptedMsg string, target interface{}) error {
+func (crypt *MessageEncryptor) aesCbcDecrypt(encryptedMsg string, target *Session) error {
+	log.Default().Printf("descrypting cookie value %s", encryptedMsg)
+
 	k := crypt.Key
 	// The longest accepted key is 32 byte long,
 	// instead of rejecting a long key, we truncate it.
@@ -92,17 +88,12 @@ func (crypt *MessageEncryptor) aesCbcDecrypt(encryptedMsg string, target interfa
 	mode.CryptBlocks(ciphertext, ciphertext)
 	unPaddedCiphertext := PKCS7Unpad(ciphertext)
 
-	// In some cases, Rails sends us messages padded with 0x10 (while this package only pads with 0x01-0x0f).
-	// For now, we handle this case here when the Serializer is JSON (so we know that 0x10 is actually a padding
-	// and not valid data - because this is an invalid json character).
-	if _, ok := crypt.Serializer.(JsonMsgSerializer); ok {
-		unPaddedCiphertext = bytes.TrimRight(unPaddedCiphertext, "\x10")
-	}
+	unPaddedCiphertext = bytes.TrimRight(unPaddedCiphertext, "\x10")
 
-	return crypt.Serializer.Unserialize(string(unPaddedCiphertext), target)
+	return Unserialize(unPaddedCiphertext, target)
 }
 
-// PKCS7Unpad() removes any potential PKCS7 padding added.
+// PKCS7Unpad removes any potential PKCS7 padding added.
 func PKCS7Unpad(data []byte) []byte {
 	dataLen := len(data)
 	// Edge case
@@ -241,17 +232,8 @@ func (crypt *MessageVerifier) checkInit() error {
 	return nil
 }
 
-type JsonMsgSerializer struct {
-}
+func Unserialize(data []byte, session *Session) error {
+	log.Default().Printf("unserializing cookie value %s", string(data))
 
-func (s JsonMsgSerializer) Serialize(v interface{}) (string, error) {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
-}
-
-func (s JsonMsgSerializer) Unserialize(data string, v interface{}) error {
-	return json.Unmarshal([]byte(data), v)
+	return json.Unmarshal(data, session)
 }

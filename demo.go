@@ -96,6 +96,8 @@ func RequestIDMiddleware(h http.Handler) http.HandlerFunc {
 func SessionMiddleware(h http.Handler) http.HandlerFunc {
 	sessionMgr := NewSessionManager("", "")
 	return func(w http.ResponseWriter, r *http.Request) {
+		log.Default().Println("starting session processing")
+
 		user, err := sessionMgr.UserFromRequest(r.Context(), r)
 		if err != nil {
 			log.Default().Printf("failed trying to get user from cookie: %s", err.Error())
